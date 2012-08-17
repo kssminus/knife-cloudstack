@@ -333,7 +333,7 @@ module CloudstackClient
       filter ||= 'featured'
       params = {
           'command' => 'listTemplates',
-          'templateFilter' => filter
+          'templatefilter' => filter
       }
       json = send_request(params)
       json['template'] || []
@@ -526,6 +526,22 @@ module CloudstackClient
       json = send_async_request(params)
       json['portforwardingrule']
     end
+
+    ##                                      
+    # Lists all the available products list in your account.
+                                            
+    def list_products                        
+      params = {                            
+          'command' => 'listAvailableProductTypes'
+      }
+                                     
+      json = send_request(params) 
+      
+      json["producttypes"] || [] 
+        
+      #json['virtualmachine'] || []          
+    end                                     
+
 
     ##
     # Sends a synchronous request to the CloudStack API and returns the response as a Hash.

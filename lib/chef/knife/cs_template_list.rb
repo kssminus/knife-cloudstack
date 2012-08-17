@@ -69,7 +69,7 @@ module KnifeCloudstack
           ui.color('Created', :bold),
       ]
 
-      filter = config['filter']
+      filter = config[:filter]
       templates = connection.list_templates(filter)
       templates.each do |t|
         template_list << t['name']
