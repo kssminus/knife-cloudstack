@@ -200,6 +200,8 @@ module KnifeCloudstack
         puts "\n"
       }
 
+config[:ssh_password] = server['password']
+
       bootstrap_for_node(public_ip).run
 
       puts "\n"
@@ -227,14 +229,15 @@ module KnifeCloudstack
       ssh_password = locate_config_value :ssh_password
       unless identity_file || (ssh_user && ssh_password)
         ui.error("You must specify either an ssh identity file or an ssh user and password")
-        exit 1
+        #exit 1
       end
     end
 
 
     def find_or_create_public_ip(server, connection)
       nic = connection.get_server_default_nic(server) || {}
-      #puts "#{ui.color("Not allocating public IP for server", :red)}" unless config[:public_ip]
+      puts "#{ui.color("Not allocating public IP for server", :red)}" unless config[:public_ip]
+
       if (config[:public_ip] == false) || (nic['type'] != 'Virtual') then
         nic['ipaddress']
       else

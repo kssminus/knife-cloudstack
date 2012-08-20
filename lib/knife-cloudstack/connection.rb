@@ -29,7 +29,7 @@ require 'json'
 module CloudstackClient
   class Connection
 
-    ASYNC_POLL_INTERVAL = 2.0
+    ASYNC_POLL_INTERVAL = 5.0
     ASYNC_TIMEOUT = 300
 
     def initialize(api_url, api_key, secret_key)
@@ -119,51 +119,54 @@ module CloudstackClient
         end
       end
 
-      service = get_service_offering(service_name)
-      if !service then
-        puts "Error: Service offering '#{service_name}' is invalid"
-        exit 1
-      end
+      #service = get_service_offering(service_name)
+      #if !service then
+      #  puts "Error: Service offering '#{service_name}' is invalid"
+      #  exit 1
+      #end
 
-      template = get_template(template_name)
-      if !template then
-        puts "Error: Template '#{template_name}' is invalid"
-        exit 1
-      end
+      #template = get_template(template_name)
+      #if !template then
+      #  puts "Error: Template '#{template_name}' is invalid"
+      #  exit 1
+      #end
 
-      zone = zone_name ? get_zone(zone_name) : get_default_zone
-      if !zone then
-        msg = zone_name ? "Zone '#{zone_name}' is invalid" : "No default zone found"
-        puts "Error: #{msg}"
-        exit 1
-      end
+      #zone = zone_name ? get_zone(zone_name) : get_default_zone
+      #if !zone then
+      #  msg = zone_name ? "Zone '#{zone_name}' is invalid" : "No default zone found"
+      #  puts "Error: #{msg}"
+      #  exit 1
+      #end
 
-      networks = []
-      network_names.each do |name|
-        network = get_network(name)
-        if !network then
-          puts "Error: Network '#{name}' not found"
-          exit 1
-        end
-        networks << get_network(name)
-      end
-      if networks.empty? then
-        networks << get_default_network
-      end
-      if networks.empty? then
-        puts "No default network found"
-        exit 1
-      end
-      network_ids = networks.map { |network|
-        network['id']
-      }
+      #networks = []
+      #network_names.each do |name|
+      #  network = get_network(name)
+      #  if !network then
+      #    puts "Error: Network '#{name}' not found"
+      #    exit 1
+      #  end
+      #  networks << get_network(name)
+      #end
+      #if networks.empty? then
+      #  networks << get_default_network
+      #end
+      #if networks.empty? then
+      #  puts "No default network found"
+      #  exit 1
+      #end
+      #network_ids = networks.map { |network|
+      #  network['id']
+      #}
 
       params = {
           'command' => 'deployVirtualMachine',
-          'serviceOfferingId' => service['id'],
-          'templateId' => template['id'],
-          'zoneId' => zone['id'],
-          'networkids' => network_ids.join(',')
+          'serviceOfferingId' => service_name,
+          #'serviceOfferingId' => service['id'],
+          'templateId' => template_name,
+          #'templateId' => template['id'],
+          'zoneId' => zone_name
+          #'zoneId' => zone['id'],
+          #'networkids' => network_ids.join(',')
       }
       params['name'] = host_name if host_name
 
@@ -565,7 +568,7 @@ module CloudstackClient
 
       raw_url = "#{@api_url}?#{data}&signature=#{signature}"
       
-      #puts "request url : " + raw_url
+#puts "request url : " + raw_url
       url = URI.parse(raw_url)
 
       http = Net::HTTP.new(url.host, url.port)
@@ -595,7 +598,7 @@ module CloudstackClient
     def send_async_request(params)
 
       json = send_request(params)
-
+#puts json
       params = {
           'command' => 'queryAsyncJobResult',
           'jobId' => json['jobid']
@@ -605,7 +608,7 @@ module CloudstackClient
       max_tries.times do
         json = send_request(params)
         status = json['jobstatus']
-
+#puts json
         print "."
 
         if status == 1 then
