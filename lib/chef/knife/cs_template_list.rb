@@ -69,9 +69,11 @@ module KnifeCloudstack
           ui.color('Created', :bold),
       ]
 
-      filter = config['filter']
+      filter = config[:filter]
       templates = connection.list_templates(filter)
+      
       templates.each do |t|
+#puts t
         template_list << t['name']
         template_list << (human_file_size(t['size']) || 'Unknown')
         template_list << t['zonename']

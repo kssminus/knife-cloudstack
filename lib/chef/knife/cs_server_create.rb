@@ -57,6 +57,12 @@ module KnifeCloudstack
            :long => "--zone ZONE",
            :description => "The CloudStack zone for the server",
            :proc => Proc.new { |z| Chef::Config[:knife][:cloudstack_zone] = z }
+  
+    option :cloudstack_disk,
+           :short => "-D DISK",
+           :long => "--disk DISK",
+           :description => "The CloudStack disk for the server",
+           :proc => Proc.new { |i| Chef::Config[:knife][:cloudstack_disk] = i }
 
     option :cloudstack_networks,
            :short => "-W NETWORKS",
@@ -147,8 +153,7 @@ module KnifeCloudstack
     option :no_bootstrap,
            :long => "--no-bootstrap",
            :description => "Disable Chef bootstrap",
-           :boolean => true,
-           :default => false
+           :default => true
 
     option :port_rules,
            :short => "-p PORT_RULES",
@@ -182,32 +187,43 @@ module KnifeCloudstack
           locate_config_value(:cloudstack_service),
           locate_config_value(:cloudstack_template),
           locate_config_value(:cloudstack_zone),
+          locate_config_value(:cloudstack_disk),
           locate_config_value(:cloudstack_networks)
       )
+      
+#puts "#"*100
+#puts server
+#puts "#"*100
 
-      public_ip = find_or_create_public_ip(server, connection)
+      private_ip = find_or_create_public_ip(server, connection)
 
       puts "\n\n"
       puts "#{ui.color("Name", :cyan)}: #{server['name']}"
-      puts "#{ui.color("Public IP", :cyan)}: #{public_ip}"
+      puts "#{ui.color("Private IP", :cyan)}: #{private_ip}"
 
-      return if config[:no_bootstrap]
 
       print "\n#{ui.color("Waiting for sshd", :magenta)}"
 
-      print(".") until is_ssh_open?(public_ip) {
+      print(".") until is_ssh_open?(private_ip) {
         sleep BOOTSTRAP_DELAY
         puts "\n"
       }
 
-      bootstrap_for_node(public_ip).run
+      server_info = { 'hostname' => hostname, 'private_ip' => private_ip, 'password' => server['password'] }
+      puts "\n"
+   
+      puts "server_info :"+server_info.to_json+"\n"
+
+      return unless config[:no_bootstrap]
+        
+      config[:ssh_password] = server['password']
+      bootstrap_for_node(private_ip).run
 
       puts "\n"
       puts "#{ui.color("Name", :cyan)}: #{server['name']}"
-      puts "#{ui.color("Public IP", :cyan)}: #{public_ip}"
+      puts "#{ui.color("Public IP", :cyan)}: #{private_ip}"
       puts "#{ui.color("Environment", :cyan)}: #{config[:environment] || '_default'}"
       puts "#{ui.color("Run List", :cyan)}: #{config[:run_list].join(', ')}"
-
     end
 
     def validate_options
@@ -225,16 +241,17 @@ module KnifeCloudstack
       identity_file = locate_config_value :identity_file
       ssh_user = locate_config_value :ssh_user
       ssh_password = locate_config_value :ssh_password
-      unless identity_file || (ssh_user && ssh_password)
-        ui.error("You must specify either an ssh identity file or an ssh user and password")
-        exit 1
-      end
+      #unless identity_file || (ssh_user && ssh_password)
+      #  ui.error("You must specify either an ssh identity file or an ssh user and password")
+        #exit 1
+      #end
     end
 
 
     def find_or_create_public_ip(server, connection)
       nic = connection.get_server_default_nic(server) || {}
-      #puts "#{ui.color("Not allocating public IP for server", :red)}" unless config[:public_ip]
+      puts "#{ui.color("Not allocating public IP for server", :red)}" unless config[:public_ip]
+
       if (config[:public_ip] == false) || (nic['type'] != 'Virtual') then
         nic['ipaddress']
       else

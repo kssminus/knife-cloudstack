@@ -1,5 +1,12 @@
 = Changes
 
+== 2012-09-20
+* change name ucloudstack because original modified for adopting KT ucloud
+* https support added
+* template list command added
+* server create modified
+
+
 == 2012-05-17 (0.0.12)
 * Adding option to disable public IP allocation on server create
   https://github.com/CloudStack/knife-cloudstack/pull/8

@@ -22,13 +22,13 @@ require 'base64'
 require 'openssl'
 require 'uri'
 require 'cgi'
-require 'net/http'
+require 'net/https'
 require 'json'
 
 module CloudstackClient
   class Connection
 
-    ASYNC_POLL_INTERVAL = 2.0
+    ASYNC_POLL_INTERVAL = 5.0
     ASYNC_TIMEOUT = 300
 
     def initialize(api_url, api_key, secret_key)
@@ -109,8 +109,8 @@ module CloudstackClient
     ##
     # Deploys a new server using the specified parameters.
 
-    def create_server(host_name, service_name, template_name, zone_name=nil, network_names=[])
-
+    def create_server(host_name, service_name, template_name, zone_name, disk_name, network_names=[])
+      
       if host_name then
         if get_server(host_name) then
           puts "Error: Server '#{host_name}' already exists."
@@ -118,51 +118,55 @@ module CloudstackClient
         end
       end
 
-      service = get_service_offering(service_name)
-      if !service then
-        puts "Error: Service offering '#{service_name}' is invalid"
-        exit 1
-      end
+      #service = get_service_offering(service_name)
+      #if !service then
+      #  puts "Error: Service offering '#{service_name}' is invalid"
+      #  exit 1
+      #end
 
-      template = get_template(template_name)
-      if !template then
-        puts "Error: Template '#{template_name}' is invalid"
-        exit 1
-      end
+      #template = get_template(template_name)
+      #if !template then
+      #  puts "Error: Template '#{template_name}' is invalid"
+      #  exit 1
+      #end
 
-      zone = zone_name ? get_zone(zone_name) : get_default_zone
-      if !zone then
-        msg = zone_name ? "Zone '#{zone_name}' is invalid" : "No default zone found"
-        puts "Error: #{msg}"
-        exit 1
-      end
+      #zone = zone_name ? get_zone(zone_name) : get_default_zone
+      #if !zone then
+      #  msg = zone_name ? "Zone '#{zone_name}' is invalid" : "No default zone found"
+      #  puts "Error: #{msg}"
+      #  exit 1
+      #end
 
-      networks = []
-      network_names.each do |name|
-        network = get_network(name)
-        if !network then
-          puts "Error: Network '#{name}' not found"
-          exit 1
-        end
-        networks << get_network(name)
-      end
-      if networks.empty? then
-        networks << get_default_network
-      end
-      if networks.empty? then
-        puts "No default network found"
-        exit 1
-      end
-      network_ids = networks.map { |network|
-        network['id']
-      }
+      #networks = []
+      #network_names.each do |name|
+      #  network = get_network(name)
+      #  if !network then
+      #    puts "Error: Network '#{name}' not found"
+      #    exit 1
+      #  end
+      #  networks << get_network(name)
+      #end
+      #if networks.empty? then
+      #  networks << get_default_network
+      #end
+      #if networks.empty? then
+      #  puts "No default network found"
+      #  exit 1
+      #end
+      #network_ids = networks.map { |network|
+      #  network['id']
+      #}
 
       params = {
           'command' => 'deployVirtualMachine',
-          'serviceOfferingId' => service['id'],
-          'templateId' => template['id'],
-          'zoneId' => zone['id'],
-          'networkids' => network_ids.join(',')
+          'serviceOfferingId' => service_name,
+          #'serviceOfferingId' => service['id'],
+          'templateId' => template_name,
+          #'templateId' => template['id'],
+          'zoneId' => zone_name,
+          #'zoneId' => zone['id'],
+          'diskofferingid' => disk_name
+          #'networkids' => network_ids.join(',')
       }
       params['name'] = host_name if host_name
 
@@ -526,6 +530,22 @@ module CloudstackClient
       json['portforwardingrule']
     end
 
+    ##                                      
+    # Lists all the available products list in your account.
+                                            
+    def list_products                        
+      params = {                            
+          'command' => 'listAvailableProductTypes'
+      }
+                                     
+      json = send_request(params) 
+      
+      json["producttypes"] || [] 
+        
+      #json['virtualmachine'] || []          
+    end                                     
+
+
     ##
     # Sends a synchronous request to the CloudStack API and returns the response as a Hash.
     #
@@ -535,7 +555,6 @@ module CloudstackClient
     def send_request(params)
       params['response'] = 'json'
       params['apiKey'] = @api_key
-
       params_arr = []
       params.sort.each { |elem|
         params_arr << elem[0].to_s + '=' + elem[1].to_s
@@ -546,9 +565,18 @@ module CloudstackClient
       signature = Base64.encode64(signature).chomp
       signature = CGI.escape(signature)
 
-      url = "#{@api_url}?#{data}&signature=#{signature}"
+      raw_url = "#{@api_url}?#{data}&signature=#{signature}"
+      
+#puts "request url : " + raw_url
+      url = URI.parse(raw_url)
 
-      response = Net::HTTP.get_response(URI.parse(url))
+      http = Net::HTTP.new(url.host, url.port)
+      
+      http.use_ssl = (url.scheme == 'https')
+      request = Net::HTTP::Get.new(url.to_s)
+      response = http.request(request)
+
+      #response = Net::HTTP.get_response(URI.parse(url))
 
       if !response.is_a?(Net::HTTPOK) then
         puts "Error #{response.code}: #{response.message}"
@@ -569,17 +597,18 @@ module CloudstackClient
     def send_async_request(params)
 
       json = send_request(params)
-
+      
       params = {
           'command' => 'queryAsyncJobResult',
           'jobId' => json['jobid']
       }
 
       max_tries = (ASYNC_TIMEOUT / ASYNC_POLL_INTERVAL).round
+      sleep 5 
       max_tries.times do
         json = send_request(params)
         status = json['jobstatus']
-
+        
         print "."
 
         if status == 1 then
