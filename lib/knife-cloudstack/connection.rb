@@ -110,8 +110,8 @@ module CloudstackClient
     ##
     # Deploys a new server using the specified parameters.
 
-    def create_server(host_name, service_name, template_name, zone_name=nil, network_names=[])
-
+    def create_server(host_name, service_name, template_name, zone_name, disk_name, network_names=[])
+      
       if host_name then
         if get_server(host_name) then
           puts "Error: Server '#{host_name}' already exists."
@@ -164,8 +164,9 @@ module CloudstackClient
           #'serviceOfferingId' => service['id'],
           'templateId' => template_name,
           #'templateId' => template['id'],
-          'zoneId' => zone_name
+          'zoneId' => zone_name,
           #'zoneId' => zone['id'],
+          'diskofferingid' => disk_name
           #'networkids' => network_ids.join(',')
       }
       params['name'] = host_name if host_name
@@ -555,7 +556,7 @@ module CloudstackClient
     def send_request(params)
       params['response'] = 'json'
       params['apiKey'] = @api_key
-
+      
       params_arr = []
       params.sort.each { |elem|
         params_arr << elem[0].to_s + '=' + elem[1].to_s
@@ -598,17 +599,18 @@ module CloudstackClient
     def send_async_request(params)
 
       json = send_request(params)
-#puts json
+      
       params = {
           'command' => 'queryAsyncJobResult',
           'jobId' => json['jobid']
       }
 
       max_tries = (ASYNC_TIMEOUT / ASYNC_POLL_INTERVAL).round
+      sleep 5 
       max_tries.times do
         json = send_request(params)
         status = json['jobstatus']
-#puts json
+        
         print "."
 
         if status == 1 then

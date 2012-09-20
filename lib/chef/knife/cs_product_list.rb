@@ -58,7 +58,8 @@ module KnifeCloudstack
           product_list << product['zoneid']
           product_list << product['zonedesc']
       end
-      puts ui.list(product_list, :columns_across, 9)
+      #puts ui.list(product_list, :columns_across, 9)
+      puts products.to_json
     end
 
     def locate_config_value(key)
