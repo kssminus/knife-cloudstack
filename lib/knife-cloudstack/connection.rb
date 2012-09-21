@@ -336,7 +336,7 @@ module CloudstackClient
       filter ||= 'featured'
       params = {
           'command' => 'listTemplates',
-          'templateFilter' => filter
+          'templatefilter' => filter
       }
       json = send_request(params)
       json['template'] || []

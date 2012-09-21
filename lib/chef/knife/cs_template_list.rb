@@ -62,6 +62,7 @@ module KnifeCloudstack
       )
 
       template_list = [
+          ui.color('ID', :bold),
           ui.color('Name', :bold),
           ui.color('Size', :bold),
           ui.color('Zone', :bold),
@@ -73,14 +74,14 @@ module KnifeCloudstack
       templates = connection.list_templates(filter)
       
       templates.each do |t|
-#puts t
+        template_list << t['id']
         template_list << t['name']
         template_list << (human_file_size(t['size']) || 'Unknown')
         template_list << t['zonename']
         template_list << t['ispublic'].to_s
         template_list << t['created']
       end
-      puts ui.list(template_list, :columns_across, 5)
+      puts ui.list(template_list, :columns_across, 6)
 
     end
 

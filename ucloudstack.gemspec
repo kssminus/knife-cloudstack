@@ -1,7 +1,7 @@
 Gem::Specification.new do |s|
   s.name = %q{ucloudstack}
-  s.version = "0.0.2"
-  s.date = %q{2012-09-20}
+  s.version = "0.0.3"
+  s.date = %q{2012-09-21}
   s.authors = ['Ryan Holmes', 'KC Braunschweig', 'John E. Vincent', 'SeongSik. Kim']
   s.email = ['rholmes@edmunds.com', 'kcbraunschweig@gmail.com', 'lusis.org+github.com@gmail.com', 'kssminus@gmail.com']
   s.summary = %q{A knife plugin for the ucloud API}
