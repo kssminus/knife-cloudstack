@@ -52,6 +52,14 @@ module KnifeCloudstack
            :long => "--cloudstack-secret-key SECRET",
            :description => "Your CloudStack secret key",
            :proc => Proc.new { |key| Chef::Config[:knife][:cloudstack_secret_key] = key }
+    
+    option :output_type,
+           :short => "-O Type",
+           :long => "--output-type Type",
+           :description => "Output type json/table",
+           :default => "table",
+           :proc => Proc.new { |type| Chef::Config[:knife][:output_type] = type }
+
 
     def run
 
@@ -81,7 +89,12 @@ module KnifeCloudstack
         template_list << t['ispublic'].to_s
         template_list << t['created']
       end
-      puts ui.list(template_list, :columns_across, 6)
+      
+      if config[:output_type].eql? "table"
+        puts ui.list(template_list, :columns_across, 6)
+      else 
+        puts template_list.to_json
+      end
 
     end
 

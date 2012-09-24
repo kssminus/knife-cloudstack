@@ -27,6 +27,14 @@ module KnifeCloudstack
 
     banner "knife cs product list (options)"
 
+    option :output_type,
+           :short => "-O Type",
+           :long => "--output-type Type",
+           :description => "Output type json/table",
+           :default => "table",
+           :proc => Proc.new { |type| Chef::Config[:knife][:output_type] = type }
+
+
     def run
 
       connection = CloudstackClient::Connection.new(
@@ -58,8 +66,12 @@ module KnifeCloudstack
           product_list << product['zoneid']
           product_list << product['zonedesc']
       end
-      #puts ui.list(product_list, :columns_across, 9)
-      puts products.to_json
+
+      if config[:output_type].eql? "table"
+        puts ui.list(product_list, :columns_across, 9)
+      else
+        puts products.to_json
+      end
     end
 
     def locate_config_value(key)
