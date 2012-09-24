@@ -93,7 +93,7 @@ module KnifeCloudstack
       if config[:output_type].eql? "table"
         puts ui.list(template_list, :columns_across, 6)
       else 
-        puts template_list.to_json
+        puts templates.to_json
       end
 
     end
