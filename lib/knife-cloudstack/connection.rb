@@ -109,7 +109,7 @@ module CloudstackClient
     ##
     # Deploys a new server using the specified parameters.
 
-    def create_server(host_name, service_name, template_name, zone_name, disk_name, network_names=[])
+    def create_server(host_name, service_name, template_name, zone_name, disk_name, usage_plan, network_names=[])
       
       if host_name then
         if get_server(host_name) then
@@ -165,7 +165,8 @@ module CloudstackClient
           #'templateId' => template['id'],
           'zoneId' => zone_name,
           #'zoneId' => zone['id'],
-          'diskofferingid' => disk_name
+          'diskofferingid' => disk_name,
+          'usageplantype' => usage_plan
           #'networkids' => network_ids.join(',')
       }
       params['name'] = host_name if host_name
@@ -577,7 +578,7 @@ module CloudstackClient
       response = http.request(request)
 
       #response = Net::HTTP.get_response(URI.parse(url))
-
+      puts response.body
       if !response.is_a?(Net::HTTPOK) then
         puts "Error #{response.code}: #{response.message}"
         puts JSON.pretty_generate(JSON.parse(response.body))
@@ -604,23 +605,29 @@ module CloudstackClient
       }
 
       max_tries = (ASYNC_TIMEOUT / ASYNC_POLL_INTERVAL).round
-      sleep 5 
+      sleep 5
+
       max_tries.times do
-        json = send_request(params)
-        status = json['jobstatus']
-        
-        print "."
+        begin
+          json = send_request(params)
+          status = json['jobstatus']
+          
+          print "."
 
-        if status == 1 then
-          return json['jobresult']
-        elsif status == 2 then
-          print "\n"
-          puts "Request failed (#{json['jobresultcode']}): #{json['jobresult']}"
-          exit 1
+          if status == 1 then
+            return json['jobresult']
+          elsif status == 2 then
+            print "\n"
+            puts "Request failed (#{json['jobresultcode']}): #{json['jobresult']}"
+            exit 1
+          end
+
+          STDOUT.flush
+          sleep ASYNC_POLL_INTERVAL
+        rescue => e
+          e.to_s
+          puts "Request Failed, Retry!"
         end
-
-        STDOUT.flush
-        sleep ASYNC_POLL_INTERVAL
       end
 
       print "\n"
