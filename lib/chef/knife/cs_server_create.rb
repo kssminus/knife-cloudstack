@@ -65,11 +65,10 @@ module KnifeCloudstack
            :proc => Proc.new { |i| Chef::Config[:knife][:cloudstack_disk] = i }
     
     option :usage_plan,
-           :short => "-UP USAGE_PLAN",
+           :short => "-A USAGE_PLAN",
            :long => "--usage-plan USAGE_PLAN",
            :description => "The CloudStack USAGE PLAN for the server",
-           :proc => Proc.new { |up| Chef::Config[:knife][:cloudstack_usage_plan] = up },
-           :default => "hourly"
+           :proc => Proc.new { |a| Chef::Config[:knife][:cloudstack_usage_plan] = a }
 
     option :cloudstack_networks,
            :short => "-W NETWORKS",
@@ -199,9 +198,9 @@ module KnifeCloudstack
           locate_config_value(:cloudstack_networks)
       )
       
-puts "#"*100
-puts server
-puts "#"*100
+#puts "#"*100
+#puts server
+#puts "#"*100
 
       private_ip = find_or_create_public_ip(server, connection)
 

@@ -109,8 +109,7 @@ module CloudstackClient
     ##
     # Deploys a new server using the specified parameters.
 
-    def create_server(host_name, service_name, template_name, zone_name, disk_name, usage_plan, network_names=[])
-      
+    def create_server(host_name, service_name, template_name, zone_name, disk_name, usage_plan="hourly", network_names=[])
       if host_name then
         if get_server(host_name) then
           puts "Error: Server '#{host_name}' already exists."
@@ -136,6 +135,7 @@ module CloudstackClient
       #  puts "Error: #{msg}"
       #  exit 1
       #end
+
 
       #networks = []
       #network_names.each do |name|
@@ -169,8 +169,11 @@ module CloudstackClient
           'usageplantype' => usage_plan
           #'networkids' => network_ids.join(',')
       }
-      params['name'] = host_name if host_name
-
+      params['name'] = host_name if host_name 
+     
+      params['usageplantype'] = 'hourly' if usage_plan.nil?
+      
+#`echo 'usage_plan : #{params.to_s}' >> ~/log`
       json = send_async_request(params)
       json['virtualmachine']
     end
@@ -568,7 +571,7 @@ module CloudstackClient
 
       raw_url = "#{@api_url}?#{data}&signature=#{signature}"
       
-#puts "request url : " + raw_url
+#` echo '#{raw_url}' >> /root/log`
       url = URI.parse(raw_url)
 
       http = Net::HTTP.new(url.host, url.port)
@@ -578,7 +581,7 @@ module CloudstackClient
       response = http.request(request)
 
       #response = Net::HTTP.get_response(URI.parse(url))
-      puts response.body
+      #puts response.body
       if !response.is_a?(Net::HTTPOK) then
         puts "Error #{response.code}: #{response.message}"
         puts JSON.pretty_generate(JSON.parse(response.body))
